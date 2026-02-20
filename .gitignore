@@ -1,0 +1,7 @@
+.venv
+.ipynb_checkpoints
+__pycache__
+analysis_reports*
+video_urls.json
+test_analysis.md
+all_notebook_data.json

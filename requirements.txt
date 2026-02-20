@@ -1,0 +1,5 @@
+yt-dlp>=2024.12.13
+notebooklm-py[browser]>=0.3.0
+pandas>=2.2.0
+fastmcp
+mcp[sse]
