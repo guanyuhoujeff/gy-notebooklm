@@ -86,6 +86,41 @@ uv run python analyze_urls.py
 uv run fastmcp run mcp_server.py --transport sse --port 8005
 ```
 
+### 5. 使用 Docker 執行
+
+您也可以透過 Docker 來執行 MCP Server。
+
+**建置映像檔:**
+```bash
+docker build -t gy-notebooklm-mcp .
+```
+
+**執行容器:**
+您需要傳遞身份驗證資訊。最簡單的方法是掛載您的 `storage_state.json` 或傳遞 `NOTEBOOKLM_AUTH_JSON` 環境變數。
+
+> **如何找到 `storage_state.json`？**
+> 在本地執行 `notebooklm login` 後，檔案通常位於：
+> - **Windows**: `%LOCALAPPDATA%\notebooklm\storage_state.json`
+> - **macOS / Linux**: `~/.notebooklm/storage_state.json`
+
+方法 A: 掛載認證檔 (推薦)
+```bash
+docker run -d -p 8005:8000 \
+  --name gy-notebooklm-mcp \
+  -v /path/to/your/storage_state.json:/app/storage_state.json \
+  -e NOTEBOOKLM_AUTH_JSON="/app/storage_state.json" \
+  gy-notebooklm-mcp
+```
+*注意：我們將容器的 8000 port 對應到主機的 8005 port。*
+
+方法 B: 直接傳遞環境變數
+```bash
+docker run -d -p 8005:8000 \
+  --name gy-notebooklm-mcp \
+  -e NOTEBOOKLM_AUTH_JSON='{"cookies": ...}' \
+  gy-notebooklm-mcp
+```
+
 **MCP Client 範例:**
 您可以執行 `mcp_client.py` 或 `mcp_http_client.py` 來測試連線與工具呼叫。
 

@@ -86,6 +86,41 @@ This project includes an MCP Server (`mcp_server.py`) that provides the followin
 uv run fastmcp run mcp_server.py --transport sse --port 8005
 ```
 
+### 5. Running with Docker
+
+You can also run the MCP server using Docker.
+
+**Build the image:**
+```bash
+docker build -t gy-notebooklm-mcp .
+```
+
+**Run the container:**
+You need to pass your authentication credentials. The easiest way is to mount your `storage_state.json` or pass the `NOTEBOOKLM_AUTH_JSON` environment variable.
+
+> **Where to find `storage_state.json`?**
+> After running `notebooklm login` locally, the file is usually located at:
+> - **Windows**: `%LOCALAPPDATA%\notebooklm\storage_state.json`
+> - **macOS / Linux**: `~/.notebooklm/storage_state.json`
+
+Option A: Mount auth file (Recommended)
+```bash
+docker run -d -p 8005:8000 \
+  --name gy-notebooklm-mcp \
+  -v /path/to/your/storage_state.json:/app/storage_state.json \
+  -e NOTEBOOKLM_AUTH_JSON="/app/storage_state.json" \
+  gy-notebooklm-mcp
+```
+*Note: We map container port 8000 to host port 8005.*
+
+Option B: Pass env var directly
+```bash
+docker run -d -p 8005:8000 \
+  --name gy-notebooklm-mcp \
+  -e NOTEBOOKLM_AUTH_JSON='{"cookies": ...}' \
+  gy-notebooklm-mcp
+```
+
 **MCP Client Example:**
 You can run `mcp_client.py` or `mcp_http_client.py` to test the connection and tool invocation.
 

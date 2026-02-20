@@ -1,0 +1,14 @@
+__pycache__
+.venv
+.git
+.gitignore
+*.md
+*.json
+analysis_reports
+video_urls.json
+*.ipynb
+analyze_files.py
+collect_urls.py
+analyze_urls.py
+*.log
+docker-compose.yml
