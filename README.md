@@ -83,7 +83,7 @@ This project includes an MCP Server (`mcp_server.py`) that provides the followin
 
 **Start Server (SSE Mode):**
 ```bash
-uv run fastmcp run mcp_server.py --transport sse --port 8005
+uv run fastmcp run mcp_server.py --transport sse --port 52500
 ```
 
 ### 5. Running with Docker
@@ -105,17 +105,17 @@ You need to pass your authentication credentials. The easiest way is to mount yo
 
 Option A: Mount auth file (Recommended)
 ```bash
-docker run -d -p 8005:8000 \
+docker run -d -p 52500:8000 \
   --name gy-notebooklm-mcp \
   -v /path/to/your/storage_state.json:/app/storage_state.json \
   -e NOTEBOOKLM_AUTH_JSON="/app/storage_state.json" \
   gy-notebooklm-mcp
 ```
-*Note: We map container port 8000 to host port 8005.*
+*Note: We map container port 8000 to host port 52500.*
 
 Option B: Pass env var directly
 ```bash
-docker run -d -p 8005:8000 \
+docker run -d -p 52500:8000 \
   --name gy-notebooklm-mcp \
   -e NOTEBOOKLM_AUTH_JSON='{"cookies": ...}' \
   gy-notebooklm-mcp

@@ -83,7 +83,7 @@ uv run python analyze_urls.py
 
 **啟動 Server (SSE 模式):**
 ```bash
-uv run fastmcp run mcp_server.py --transport sse --port 8005
+uv run fastmcp run mcp_server.py --transport sse --port 52500
 ```
 
 ### 5. 使用 Docker 執行
@@ -105,17 +105,17 @@ docker build -t gy-notebooklm-mcp .
 
 方法 A: 掛載認證檔 (推薦)
 ```bash
-docker run -d -p 8005:8000 \
+docker run -d -p 52500:8000 \
   --name gy-notebooklm-mcp \
   -v /path/to/your/storage_state.json:/app/storage_state.json \
   -e NOTEBOOKLM_AUTH_JSON="/app/storage_state.json" \
   gy-notebooklm-mcp
 ```
-*注意：我們將容器的 8000 port 對應到主機的 8005 port。*
+*注意：我們將容器的 8000 port 對應到主機的 52500 port。*
 
 方法 B: 直接傳遞環境變數
 ```bash
-docker run -d -p 8005:8000 \
+docker run -d -p 52500:8000 \
   --name gy-notebooklm-mcp \
   -e NOTEBOOKLM_AUTH_JSON='{"cookies": ...}' \
   gy-notebooklm-mcp

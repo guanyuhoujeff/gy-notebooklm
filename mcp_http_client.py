@@ -14,7 +14,7 @@ async def main():
     # 這裡假設你的 MCP Server 運行在 http://localhost:8000/sse
     # 你可以使用 fastmcp 命令來啟動 server: 
     # fastmcp run mcp_server.py --transport sse --port 8000
-    sse_url = "http://localhost:8005/sse"
+    sse_url = "http://localhost:52500/sse"
 
     print(f"正在連接 MCP SSE 伺服器: {sse_url} ...")
 
