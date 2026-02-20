@@ -7,34 +7,35 @@ from notebooklm import NotebookLMClient
 mcp = FastMCP("NotebookLM Analyzer")
 
 @mcp.tool()
-async def analyze_pdf_with_notebooklm(pdf_path: str, custom_prompt: str = None) -> str:
+async def analyze_file_with_notebooklm(file_path: str, custom_prompt: str = None) -> str:
     """
-    使用 Google NotebookLM 深度分析本地的 PDF 檔案。
+    使用 Google NotebookLM 深度分析本地檔案 (支援 PDF, MP4, MP3, etc.)。
     
     Args:
-        pdf_path: 本地 PDF 檔案的絕對路徑。
+        file_path: 本地檔案的絕對路徑。
         custom_prompt: (可選) 自訂的分析指令。若未提供，將使用預設的深度分析指令。
     """
-    if not os.path.exists(pdf_path):
-        return f"錯誤：找不到檔案 {pdf_path}"
+    if not os.path.exists(file_path):
+        return f"錯誤：找不到檔案 {file_path}"
+    
+    file_name = os.path.basename(file_path)
 
     prompt = custom_prompt or (
-        "請針對這份文件進行深度分析，並以繁體中文與 Markdown 格式輸出詳細報告。內容應包含：\n"
-        "1. **文件核心摘要**：這份文件的主要目的與結論。\n"
-        "2. **關鍵觀點與發現**：列出文件中最重要的數據、論點或洞察（Golden Nuggets）。\n"
-        "3. **作者立場與意圖**：分析作者或撰寫單位的觀點與潛在目標。\n"
-        "4. **問題與解決方案**：文中提到的主要挑戰及其對應解法。\n"
-        "5. **行動建議**：基於文件內容，讀者接下來可以採取的具體行動。\n"
+        f"請針對這份檔案 ({file_name}) 進行深度分析，並以繁體中文與 Markdown 格式輸出詳細報告。內容應包含：\n"
+        "1. **核心摘要**：這份檔案的主要內容目的與結論。\n"
+        "2. **關鍵觀點與發現**：列出內容中最重要的數據、論點或洞察（Golden Nuggets）。\n"
+        "3. **作者/講者立場**：分析作者或講者的觀點與潛在意圖。\n"
+        "4. **問題與解決方案**：提到的主要挑戰及其對應解法。\n"
+        "5. **行動建議**：基於內容，讀者接下來可以採取的具體行動。\n"
     )
         
     try:
         async with await NotebookLMClient.from_storage() as client:
-            pdf_name = os.path.basename(pdf_path)
-            nb_title = f"MCP PDF Analysis: {pdf_name}"
+            nb_title = f"MCP File Analysis: {file_name}"
             nb = await client.notebooks.create(nb_title)
             
-            await client.sources.add_file(nb.id, pdf_path)
-            await asyncio.sleep(10) # 等待 NotebookLM 處理檔案
+            await client.sources.add_file(nb.id, file_path)
+            await asyncio.sleep(15) # 等待 NotebookLM 處理檔案 (影片可能需要更久)
             
             result = await client.chat.ask(nb.id, prompt)
             
@@ -43,7 +44,7 @@ async def analyze_pdf_with_notebooklm(pdf_path: str, custom_prompt: str = None) 
             
             return result.answer
     except Exception as e:
-        return f"分析 PDF 時發生錯誤: {e}\n請確認您已正確設定 notebooklm 的登入狀態。"
+        return f"分析檔案時發生錯誤: {e}\n請確認您已正確設定 notebooklm 的登入狀態。"
 
 @mcp.tool()
 async def analyze_url_with_notebooklm(url: str, title: str = "URL Analysis", custom_prompt: str = None) -> str:

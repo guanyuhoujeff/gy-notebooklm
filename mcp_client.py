@@ -34,7 +34,7 @@ async def main():
             for tool in tools.tools:
                 print(f"- {tool.name}: {tool.description}")
 
-            # 範例：呼叫 analyze_url_with_notebooklm 工具
+            # 範例 1：呼叫 analyze_url_with_notebooklm 工具
             # 請確保你的 NotebookLMClient 已正確配置 (例如 auth token)
             print("\n--- 測試呼叫工具: analyze_url_with_notebooklm ---")
             
@@ -45,6 +45,12 @@ async def main():
                 "title": "Gemini Demo",
                 "custom_prompt": "請簡短摘要這段影片的重點 (繁體中文)"
             }
+
+            # 範例 2 (可選)：呼叫 analyze_file_with_notebooklm 工具
+            # tool_name = "analyze_file_with_notebooklm"
+            # tool_args = {
+            #     "file_path": "/path/to/your/file.pdf" # 或 .mp4, .mp3
+            # }
 
             try:
                 # 呼叫工具

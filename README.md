@@ -1,96 +1,99 @@
-# YouTube 影片分析專案 (使用 NotebookLM)
+# NotebookLM 自動化分析工具 (NotebookLM Automation Tools)
 
-本專案旨在自動下載指定 YouTube 播放清單中的最新影片音訊，並使用 Google NotebookLM 進行內容分析。
+本專案是一個基於 [notebooklm-py](https://github.com/teng-lin/notebooklm-py) 的擴充工具箱，旨在自動化 Google NotebookLM 的分析流程。支援 YouTube 影片、網頁連結以及各種本地檔案 (PDF, MP4, MP3 等) 的深度分析，並提供 MCP (Model Context Protocol) 伺服器供 AI 代理人調用。
 
-## 功能
+## ✨ 主要功能
 
-1.  **自動下載**：抓取播放清單中最新的 10 部影片，並轉換為 MP3 音訊。
-2.  **AI 分析**：自動上傳音訊至 NotebookLM，建立專屬筆記本，並生成關鍵總結與洞察。
+1.  **多格式檔案分析**：支援上傳並分析本地檔案，包括 PDF 文件、MP4 影片、MP3 音訊等。
+2.  **YouTube 批次分析**：自動抓取播放清單影片，轉錄並生成繁體中文深度報告。
+3.  **MCP 伺服器整合**：提供標準 MCP 介面，讓 Claude、Cursor 等 AI 助手可以直接調用 NotebookLM 進行分析。
+4.  **自動化報告生成**：所有分析結果皆自動匯出為 Markdown 格式的結構化報告。
 
-## 環境建置 (使用 `uv`)
+## 🛠️ 環境建置
 
-本專案建議使用 [uv](https://github.com/astral-sh/uv) 進行 Python 環境管理與套件安裝。
+本專案建議使用 [uv](https://github.com/astral-sh/uv) 進行 Python 環境管理與套件安裝，以確保依賴套件的穩定性。
 
-<!-- 環境建置 -->
 ```bash
-conda deactivate
+# 1. Update system & install python (if needed)
+sudo apt update && sudo apt install -y python3.12 python3.12-venv ffmpeg
 
-sudo apt update && sudo apt upgrade -y
-sudo add-apt-repository ppa:deadsnakes/ppa -y
-sudo apt update
-sudo apt install python3.12 -y
-sudo apt install python3.12-venv
-curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12
-pip --version
+# 2. Setup environment
+curl -lsAf https://astral.sh/uv/install.sh | sh
 python3.12 -m venv .venv
 source .venv/bin/activate
-pip install uv
+
+# 3. Install dependencies
 uv pip install -r requirements.txt
-```
-uv pip install jupyter notebook
-uv run jupyter notebook
-
-<!-- run python pdf analysis -->
-uv run python analyze_pdf.py test.pdf
-
-<!-- run python url analysis -->
-uv run python analyze_urls.py
-
-<!-- run mcp server -->
-uv run fastmcp run mcp_server.py --transport sse --port 8005
-
-
-```bash
-# 安裝 Playwright 瀏覽器 (用於 NotebookLM 登入)
 playwright install chromium
 ```
 
-## 使用說明
+## 🚀 使用說明
 
-### 第一步：收集影片連結
+### 1. 身份驗證 (首次執行必要)
 
-執行以下指令，從播放清單中提取前 **60** 部影片的連結：
+由於工具需存取您的 NotebookLM 帳號，請先進行登入：
+
+**有瀏覽器環境 (Local):**
+```bash
+uv run notebooklm login
+```
+登入 Google 帳號後，關閉視窗並在終端機按 Enter。
+
+**無頭模式 (Remote/Headless):**
+在本地電腦執行 `notebooklm login`，將產生的 `storage_state.json` (通常在 `~/.notebooklm-py/` 或 `%LOCALAPPDATA%/notebooklm-py/`) 複製到伺服器的同樣位置，或設定環境變數 `NOTEBOOKLM_AUTH_JSON`。
+
+### 2. 分析本地檔案 (PDF, MP4, MP3)
+
+使用 `analyze_files.py` 來分析單一檔案。程式會自動上傳檔案、建立筆記本、進行問答分析並儲存報告。
 
 ```bash
-python collect_urls.py
+# 分析 PDF
+uv run python analyze_files.py /path/to/document.pdf
+
+# 分析 影片 (MP4)
+uv run python analyze_files.py /path/to/video.mp4
+
+# 分析 音訊 (MP3)
+uv run python analyze_files.py /path/to/audio.mp3
 ```
+報告將儲存為 `[檔名]_analysis.md`。
 
-完成後會產生 `video_urls.json` 檔案。
+### 3. YouTube / URL 批次分析
 
-### 第二步：身份驗證 (重要！)
+針對 YouTube 播放清單或特定網址進行批次分析。
 
-由於 `notebooklm-py` 需要存取您的 Google NotebookLM 帳號，首次使用前必須進行登入。
-
-**本地執行 (有螢幕/瀏覽器環境)：**
-
+**步驟 A：收集連結**
+修改並執行 `collect_urls.py` 來抓取播放清單連結 (預設抓取前 60 部)：
 ```bash
-notebooklm login
+uv run python collect_urls.py
 ```
-這會開啟一個瀏覽器視窗，請登入您的 Google 帳號。登入完成並看到 NotebookLM 首頁後，回到終端機按 Enter 完成驗證。
+這會產生 `video_urls.json`。
 
-**遠端/無頭模式執行 (Headless)：**
-
-若您在此環境無法開啟瀏覽器，請在**本地電腦**執行上述 `notebooklm login`，然後將生成的 `storage_state.json` (通常位於 `~/.notebooklm-py/` 或 `User/AppData/Local/notebooklm-py/`) 複製到此專案環境的相同位置，或者設定環境變數 `NOTEBOOKLM_AUTH_JSON`。
-
-### 第三步：執行分析
-
-確認已登入後，執行分析腳本：
-
+**步驟 B：執行分析**
 ```bash
-python analyze_urls.py
+uv run python analyze_urls.py
+```
+程式會讀取 json 清單，依序分析並將結果存入 `analysis_reports/` 資料夾。
+
+### 4. 啟動 MCP 伺服器 (供 AI Agent 使用)
+
+本專案包含一個 MCP Server (`mcp_server.py`)，提供以下工具供 AI 調用：
+- `analyze_file_with_notebooklm`: 分析本地檔案 (支援各格式)
+- `analyze_url_with_notebooklm`: 分析網頁或 YouTube 連結
+
+**啟動 Server (SSE 模式):**
+```bash
+uv run fastmcp run mcp_server.py --transport sse --port 8005
 ```
 
-程式將自動：
-1. 讀取 `video_urls.json` 中的 60 部影片。
-2. 為**每一部影片**建立一個獨立的 NotebookLM 專案。
-3. 針對該影片進行繁體中文深度分析。
-4. 將結果分別儲存為 `analysis_reports/[影片標題]_analysis_result.md`。
+**MCP Client 範例:**
+您可以執行 `mcp_client.py` 或 `mcp_http_client.py` 來測試連線與工具呼叫。
 
-> 注意：處理 60 部影片可能需要較長時間，請耐心等待。
+## 📂 專案結構
 
-## 檔案結構
-
-- `collect_urls.py`: 影片連結收集腳本
-- `analyze_urls.py`: NotebookLM 分析腳本 (使用 URL)
-- `video_urls.json`: 影片連結清單 (60 部)
-- `analysis_reports/`: 存放個別影片分析報告的資料夾
+- `analyze_files.py`: 通用檔案分析腳本 (核心工具)
+- `mcp_server.py`: MCP 伺服器實作
+- `analyze_urls.py`: URL/YouTube 批次分析腳本
+- `collect_urls.py`: YouTube 播放清單爬蟲
+- `requirements.txt`: 專案依賴列表
+- `analysis_reports/`: 存放分析報告的輸出目錄

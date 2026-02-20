@@ -14,7 +14,7 @@ async def main():
     # 這裡假設你的 MCP Server 運行在 http://localhost:8000/sse
     # 你可以使用 fastmcp 命令來啟動 server: 
     # fastmcp run mcp_server.py --transport sse --port 8000
-    sse_url = "http://localhost:8000/sse"
+    sse_url = "http://localhost:8005/sse"
 
     print(f"正在連接 MCP SSE 伺服器: {sse_url} ...")
 
@@ -35,7 +35,7 @@ async def main():
                      print(f"列出工具時發生錯誤: {e}")
                      return
 
-                # 範例：呼叫 analyze_url_with_notebooklm 工具
+                # 範例 1：呼叫 analyze_url_with_notebooklm 工具
                 print("\n--- 測試呼叫工具: analyze_url_with_notebooklm ---")
                 
                 tool_name = "analyze_url_with_notebooklm"
@@ -44,6 +44,12 @@ async def main():
                     "title": "Gemini Demo HTTP",
                     "custom_prompt": "請簡短摘要這段影片的重點 (繁體中文)"
                 }
+
+                # 範例 2 (可選)：呼叫 analyze_file_with_notebooklm 工具
+                # tool_name = "analyze_file_with_notebooklm"
+                # tool_args = {
+                #     "file_path": "/path/to/your/file.pdf" # 或 .mp4, .mp3
+                # }
 
                 try:
                     print(f"正在透過 HTTP 呼叫 {tool_name}，請稍候...")
