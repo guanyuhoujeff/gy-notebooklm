@@ -13,7 +13,7 @@ except ImportError:
 async def main():
     # 這裡假設你的 MCP Server 運行在 http://localhost:8000/sse
     # 你可以使用 fastmcp 命令來啟動 server: 
-    # fastmcp run mcp_server.py --transport sse --port 8000
+    # fastmcp run scripts/mcp_server.py --transport sse --port 8000
     sse_url = "http://localhost:52500/sse"
 
     print(f"正在連接 MCP SSE 伺服器: {sse_url} ...")
@@ -74,7 +74,7 @@ async def main():
     except ConnectionRefusedError:
         print(f"\n錯誤: 無法連接到 {sse_url}")
         print("請確認伺服器是否已啟動，指令範例：")
-        print("fastmcp run mcp_server.py --transport sse --port 8000")
+        print("fastmcp run scripts/mcp_server.py --transport sse --port 8000")
     except Exception as e:
         print(f"\n發生未預期的錯誤: {e}")
 

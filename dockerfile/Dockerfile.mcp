@@ -29,11 +29,11 @@ RUN playwright install chromium
 RUN playwright install-deps chromium
 
 # Copy the server code
-COPY mcp_server.py .
+COPY scripts/mcp_server.py scripts/mcp_server.py
 
 # Expose the port the app runs on
 EXPOSE 8000
 
 # Define the command to run the application
 # Host 0.0.0.0 is crucial for Docker networking
-CMD ["fastmcp", "run", "mcp_server.py", "--transport", "sse", "--port", "8000", "--host", "0.0.0.0"]
+CMD ["fastmcp", "run", "scripts/mcp_server.py", "--transport", "sse", "--port", "8000", "--host", "0.0.0.0"]

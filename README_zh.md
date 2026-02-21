@@ -48,13 +48,13 @@ uv run notebooklm login
 
 ```bash
 # 分析 PDF
-uv run python analyze_files.py /path/to/document.pdf
+uv run python scripts/analyze_files.py /path/to/document.pdf
 
 # 分析 影片 (MP4)
-uv run python analyze_files.py /path/to/video.mp4
+uv run python scripts/analyze_files.py /path/to/video.mp4
 
 # 分析 音訊 (MP3)
-uv run python analyze_files.py /path/to/audio.mp3
+uv run scripts/python analyze_files.py /path/to/audio.mp3
 ```
 報告將儲存為 `[檔名]_analysis.md`。
 
@@ -63,15 +63,15 @@ uv run python analyze_files.py /path/to/audio.mp3
 針對 YouTube 播放清單或特定網址進行批次分析。
 
 **步驟 A：收集連結**
-修改並執行 `collect_urls.py` 來抓取播放清單連結 (預設抓取前 60 部)：
+修改並執行位於 `utils/youtube/` 內的 `collect_urls.py` 來抓取播放清單連結 (預設抓取前 60 部)：
 ```bash
-uv run python collect_urls.py
+uv run python utils/youtube/collect_urls.py
 ```
 這會產生 `video_urls.json`。
 
 **步驟 B：執行分析**
 ```bash
-uv run python analyze_urls.py
+uv run python scripts/analyze_urls.py
 ```
 程式會讀取 json 清單，依序分析並將結果存入 `analysis_reports/` 資料夾。
 
@@ -79,23 +79,39 @@ uv run python analyze_urls.py
 
 本專案包含一個 MCP Server (`mcp_server.py`)，提供以下工具供 AI 調用：
 - `analyze_file_with_notebooklm`: 分析本地檔案 (支援各格式)
+- `analyze_remote_file_with_notebooklm`: 透過 HTTP URL 分析遠端檔案
 - `analyze_url_with_notebooklm`: 分析網頁或 YouTube 連結
 
-**啟動 Server (SSE 模式):**
+**啟動 MCP Server (SSE 模式):**
 ```bash
-uv run fastmcp run mcp_server.py --transport sse --port 52500
+uv run fastmcp run scripts/mcp_server.py --transport sse --port 52500
 ```
 
-### 5. 使用 Docker 執行
+### 5. 啟動 FastAPI 伺服器 (REST API)
 
-您也可以透過 Docker 來執行 MCP Server。
+如果您偏好標準的 REST API 介面而非 MCP，可以使用 FastAPI 伺服器。它提供了用於分析本地檔案 (`upload`)、遠端檔案 (`remote-file`) 或是普通網址 (`url`) 的端點。
 
-**建置映像檔:**
+**啟動 FastAPI 伺服器:**
 ```bash
-docker build -t gy-notebooklm-mcp .
+# 預設 Port 為 52501
+uv run python scripts/fastapi_server.py
+```
+啟動伺服器後，您可以前往 http://localhost:52501/docs 查看互動式的 API 測試文件。
+
+**呼叫 FastAPI 的客戶端範例:**
+提供了一個專用的客戶端腳本 `fastapi_client.py`，可以直接在終端機上傳本地檔案並進行分析：
+```bash
+# 基本用法
+uv run python scripts/fastapi_client.py /path/to/my_document.pdf
+
+# 附加自訂 Prompt
+uv run python scripts/fastapi_client.py /path/to/my_video.mp4 --prompt "請幫我摘要這部影片前三分鐘的重點"
 ```
 
-**執行容器:**
+### 6. 使用 Docker 執行
+
+您也可以透過 Docker 來執行 MCP 或 FastAPI Server。
+
 您需要傳遞身份驗證資訊。最簡單的方法是掛載您的 `storage_state.json` 或傳遞 `NOTEBOOKLM_AUTH_JSON` 環境變數。
 
 > **如何找到 `storage_state.json`？**
@@ -103,22 +119,40 @@ docker build -t gy-notebooklm-mcp .
 > - **Windows**: `%LOCALAPPDATA%\notebooklm\storage_state.json`
 > - **macOS / Linux**: `~/.notebooklm/storage_state.json`
 
-方法 A: 掛載認證檔 (推薦)
+如果不想掛載檔案，您可以使用環境變數傳入整個 JSON 字串 (docker run 時，建議使用環境變數)：
+```bash
+export AUTH_JSON=$(cat ~/.notebooklm/storage_state.json)
+```
+
+#### 選項 A: 執行 MCP Server
+
+**建置映像檔:**
+```bash
+docker build -t gy-notebooklm-mcp -f dockerfile/Dockerfile.mcp .
+```
+
+**啟動容器:**
 ```bash
 docker run -d -p 52500:8000 \
   --name gy-notebooklm-mcp \
-  -v /path/to/your/storage_state.json:/app/storage_state.json \
-  -e NOTEBOOKLM_AUTH_JSON="/app/storage_state.json" \
+  -e NOTEBOOKLM_AUTH_JSON="$AUTH_JSON" \
   gy-notebooklm-mcp
 ```
 *注意：我們將容器的 8000 port 對應到主機的 52500 port。*
 
-方法 B: 直接傳遞環境變數
+#### 選項 B: 執行 FastAPI Server
+
+**建置映像檔:**
 ```bash
-docker run -d -p 52500:8000 \
-  --name gy-notebooklm-mcp \
-  -e NOTEBOOKLM_AUTH_JSON='{"cookies": ...}' \
-  gy-notebooklm-mcp
+docker build -t gy-notebooklm-fastapi -f dockerfile/Dockerfile.fastapi .
+```
+
+**啟動容器:**
+```bash
+docker run -d -p 52501:52501 \
+  --name gy-notebooklm-fastapi \
+  -e NOTEBOOKLM_AUTH_JSON="$AUTH_JSON" \
+  gy-notebooklm-fastapi
 ```
 
 **MCP Client 範例:**
@@ -126,9 +160,12 @@ docker run -d -p 52500:8000 \
 
 ## 📂 專案結構
 
-- `analyze_files.py`: 通用檔案分析腳本 (核心工具)
-- `mcp_server.py`: MCP 伺服器實作
-- `analyze_urls.py`: URL/YouTube 批次分析腳本
-- `collect_urls.py`: YouTube 播放清單爬蟲
+- `scripts/analyze_files.py`: 通用檔案分析腳本 (核心工具)
+- `scripts/mcp_server.py`: MCP 伺服器實作
+- `scripts/analyze_urls.py`: URL/YouTube 批次分析腳本
+- `scripts/fastapi_server.py`: 標準 REST API 伺服器
+- `scripts/fastapi_client.py`: FastAPI 互動腳本
+- `utils/youtube/collect_urls.py`: YouTube 播放清單爬蟲
+- `dockerfile/`: MCP 和 FastAPI 的 Dockerfile 目錄
 - `requirements.txt`: 專案依賴列表
 - `analysis_reports/`: 存放分析報告的輸出目錄

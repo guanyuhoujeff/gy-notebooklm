@@ -1,0 +1,36 @@
+# 使用官方 Python 3.12 輕量版映像檔
+FROM python:3.12-slim
+
+# 設定工作目錄
+WORKDIR /app
+
+# 安裝系統依賴 (例如 ffmpeg) 與 playwright 所需要的一些依賴
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    wget \
+    gnupg \
+    libglib2.0-0 libnss3 libxshmfence1 libasound2 \
+    && rm -rf /var/lib/apt/lists/*
+
+# 複製 requirements.txt 並安裝 Python 依賴
+COPY requirements.txt .
+
+# 補充安裝 fastapi 與 uvicorn 等必要套件 (以防 requirements.txt 沒寫到)
+RUN pip install --no-cache-dir -r requirements.txt \
+    fastapi uvicorn pydantic requests
+
+# 安裝 Playwright 瀏覽器
+RUN playwright install chromium
+RUN playwright install-deps chromium
+
+# 複製專案程式碼
+COPY . .
+
+# 暴露 FastAPI 預設的 52501 port
+EXPOSE 52501
+
+# 設定環境變數
+ENV PYTHONUNBUFFERED=1
+
+# 啟動命令 (使用 uvicorn 執行 FastAPI app)
+CMD ["uvicorn", "scripts.fastapi_server:app", "--host", "0.0.0.0", "--port", "52501"]

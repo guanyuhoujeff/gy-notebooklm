@@ -48,13 +48,13 @@ Use `analyze_files.py` to analyze a single file. The program will automatically 
 
 ```bash
 # Analyze PDF
-uv run python analyze_files.py /path/to/document.pdf
+uv run python scripts/analyze_files.py /path/to/document.pdf
 
 # Analyze Video (MP4)
-uv run python analyze_files.py /path/to/video.mp4
+uv run python scripts/analyze_files.py /path/to/video.mp4
 
 # Analyze Audio (MP3)
-uv run python analyze_files.py /path/to/audio.mp3
+uv run python scripts/analyze_files.py /path/to/audio.mp3
 ```
 The report will be saved as `[filename]_analysis.md`.
 
@@ -63,15 +63,15 @@ The report will be saved as `[filename]_analysis.md`.
 Batch analysis for YouTube playlists or specific URLs.
 
 **Step A: Collect URLs**
-Modify and run `collect_urls.py` to grab playlist links (defaults to the first 60 videos):
+Modify and run `collect_urls.py` out of `utils/youtube/` to grab playlist links (defaults to the first 60 videos):
 ```bash
-uv run python collect_urls.py
+uv run python utils/youtube/collect_urls.py
 ```
 This will generate `video_urls.json`.
 
 **Step B: Execute Analysis**
 ```bash
-uv run python analyze_urls.py
+uv run python scripts/analyze_urls.py
 ```
 The program will read the json list, analyze them sequentially, and save the results in the `analysis_reports/` folder.
 
@@ -79,46 +79,80 @@ The program will read the json list, analyze them sequentially, and save the res
 
 This project includes an MCP Server (`mcp_server.py`) that provides the following tools for AI to avail:
 - `analyze_file_with_notebooklm`: Analyze local files (supports various formats)
+- `analyze_remote_file_with_notebooklm`: Analyze remote files via HTTP URLs
 - `analyze_url_with_notebooklm`: Analyze web pages or YouTube links
 
-**Start Server (SSE Mode):**
+**Start MCP Server (SSE Mode):**
 ```bash
-uv run fastmcp run mcp_server.py --transport sse --port 52500
+uv run fastmcp run scripts/mcp_server.py --transport sse --port 52500
 ```
 
-### 5. Running with Docker
+### 5. Start FastAPI Server (REST API)
 
-You can also run the MCP server using Docker.
+If you prefer a standard REST API interface instead of MCP, you can use the FastAPI server. It provides endpoints for local file upload (`upload`), remote file URL (`remote-file`), or standard URL (`url`) analysis.
 
-**Build the image:**
+**Start FastAPI Server:**
 ```bash
-docker build -t gy-notebooklm-mcp .
+# Default port is 52501
+uv run python scripts/fastapi_server.py
+```
+After starting the server, you can view the interactive API documentation at: http://localhost:52501/docs
+
+**Usage Example:**
+A dedicated client script `fastapi_client.py` has been provided which can upload local files and trigger analysis directly from your terminal:
+```bash
+# Basic usage
+uv run python scripts/fastapi_client.py /path/to/my_document.pdf
+
+# Add a custom prompt
+uv run python scripts/fastapi_client.py /path/to/my_video.mp4 --prompt "Please summarize the first three minutes of this video"
 ```
 
-**Run the container:**
-You need to pass your authentication credentials. The easiest way is to mount your `storage_state.json` or pass the `NOTEBOOKLM_AUTH_JSON` environment variable.
+### 6. Running with Docker
+
+You can also run the MCP server or FastAPI Server using Docker.
+
+You need to pass your authentication credentials. The easiest way is to pass the `NOTEBOOKLM_AUTH_JSON` environment variable.
 
 > **Where to find `storage_state.json`?**
 > After running `notebooklm login` locally, the file is usually located at:
 > - **Windows**: `%LOCALAPPDATA%\notebooklm\storage_state.json`
 > - **macOS / Linux**: `~/.notebooklm/storage_state.json`
 
-Option A: Mount auth file (Recommended)
+You can pass the entire JSON string via an environment variable (Recommended during `docker run`):
+```bash
+export AUTH_JSON=$(cat ~/.notebooklm/storage_state.json)
+```
+
+#### Option A: Run MCP Server
+
+**Build the image:**
+```bash
+docker build -t gy-notebooklm-mcp -f dockerfile/Dockerfile.mcp .
+```
+
+**Run the container:**
 ```bash
 docker run -d -p 52500:8000 \
   --name gy-notebooklm-mcp \
-  -v /path/to/your/storage_state.json:/app/storage_state.json \
-  -e NOTEBOOKLM_AUTH_JSON="/app/storage_state.json" \
+  -e NOTEBOOKLM_AUTH_JSON="$AUTH_JSON" \
   gy-notebooklm-mcp
 ```
 *Note: We map container port 8000 to host port 52500.*
 
-Option B: Pass env var directly
+#### Option B: Run FastAPI Server
+
+**Build the image:**
 ```bash
-docker run -d -p 52500:8000 \
-  --name gy-notebooklm-mcp \
-  -e NOTEBOOKLM_AUTH_JSON='{"cookies": ...}' \
-  gy-notebooklm-mcp
+docker build -t gy-notebooklm-fastapi -f dockerfile/Dockerfile.fastapi .
+```
+
+**Run the container:**
+```bash
+docker run -d -p 52501:52501 \
+  --name gy-notebooklm-fastapi \
+  -e NOTEBOOKLM_AUTH_JSON="$AUTH_JSON" \
+  gy-notebooklm-fastapi
 ```
 
 **MCP Client Example:**
@@ -126,9 +160,12 @@ You can run `mcp_client.py` or `mcp_http_client.py` to test the connection and t
 
 ## 📂 Project Structure
 
-- `analyze_files.py`: General file analysis script (Core tool)
-- `mcp_server.py`: MCP Server implementation
-- `analyze_urls.py`: URL/YouTube batch analysis script
-- `collect_urls.py`: YouTube playlist crawler
+- `scripts/analyze_files.py`: General file analysis script (Core tool)
+- `scripts/mcp_server.py`: MCP Server implementation
+- `scripts/analyze_urls.py`: URL/YouTube batch analysis script
+- `scripts/fastapi_server.py`: FastAPI server for standard REST API endpoints.
+- `scripts/fastapi_client.py`: FastAPI client script.
+- `utils/youtube/collect_urls.py`: YouTube playlist crawler
+- `dockerfile/`: Dockerfiles for MCP and FastAPI servers
 - `requirements.txt`: Project dependency list
 - `analysis_reports/`: Output directory for analysis reports
