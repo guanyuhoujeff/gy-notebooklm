@@ -122,16 +122,30 @@ async def analyze_uploaded_file(file: UploadFile = File(...), custom_prompt: str
     try:
         async with await NotebookLMClient.from_storage() as client:
             nb_title = f"API Uploaded File: {file_name}"
+            print(f"Creating notebook: '{nb_title}'...")
             nb = await client.notebooks.create(nb_title)
             
-            await client.sources.add_file(nb.id, temp_file_path)
-            await asyncio.sleep(15) 
-            
+            source = await client.sources.add_file(
+                nb.id, 
+                temp_file_path,
+                wait=True,             # 設定為 True 以等待上傳與處理完畢
+                wait_timeout=120.0     # 可選：預設 120 秒超時，您可以自行延長
+            )
+            if source.is_ready:
+                # print("檔案已上傳且處理完畢！")
+                pass
+            else:
+                # print("檔案上傳失敗或超時！")
+                # await asyncio.sleep(15) 
+                pass
+            # print(f"Querying analysis...")
             result = await client.chat.ask(nb.id, prompt)
+            # print(f"Analysis result: {result.answer}")
             await client.notebooks.delete(nb.id)
             
             return {"status": "success", "result": result.answer}
     except Exception as e:
+        print(f"分析檔案時發生錯誤: {e}")
         raise HTTPException(status_code=500, detail=f"分析檔案時發生錯誤: {e}\n請確認您已正確設定 notebooklm 的登入狀態。")
     finally:
         if os.path.exists(temp_file_path):
