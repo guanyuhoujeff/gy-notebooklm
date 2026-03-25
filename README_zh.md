@@ -150,6 +150,7 @@ docker build -t gy-notebooklm-fastapi -f dockerfile/Dockerfile.fastapi .
 **啟動容器:**
 ```bash
 docker run -d -p 52501:52501 \
+  --restart always \
   --name gy-notebooklm-fastapi \
   -e NOTEBOOKLM_AUTH_JSON="$AUTH_JSON" \
   gy-notebooklm-fastapi
@@ -169,3 +170,10 @@ docker run -d -p 52501:52501 \
 - `dockerfile/`: MCP 和 FastAPI 的 Dockerfile 目錄
 - `requirements.txt`: 專案依賴列表
 - `analysis_reports/`: 存放分析報告的輸出目錄
+
+
+## 常見問題
+
+### 1. 認證已過期。storage_state.json 裡的 Google 登入 cookie 已經失效了。
+
+您需要先刪除原來的 storage_state.json，然後再一次本機重新登入
